@@ -4,6 +4,10 @@ import argparse
 import getpass
 
 
+STARS_COLUMN_WIDTH = 5
+ISSUES_COLUMN_WIDTH = 6
+
+
 class APIRateLimitException(Exception):
     pass
 
@@ -47,8 +51,8 @@ def print_top_repos(repos_for_output):
     for url, stars, issues in repos_for_output:
         print('{} {} {}'.format(
             url.ljust(max_url_len),
-            str(stars).rjust(5),
-            str(issues).rjust(6)
+            str(stars).rjust(STARS_COLUMN_WIDTH),
+            str(issues).rjust(ISSUES_COLUMN_WIDTH)
         ))
 
 
@@ -72,28 +76,36 @@ def get_cmdline_args():
     return parser.parse_args()
 
 
+def get_repos_for_output(week_ago, top_repos_num, api_auth):
+    repos_for_output = []
+    trending_repos = get_trending_repositories(week_ago, top_repos_num, api_auth)
+    for repo in trending_repos['items']:
+        open_issues = get_open_issues_amount(
+            repo['owner']['login'],
+            repo['name'],
+            api_auth
+        )
+        repos_for_output.append((
+            repo['html_url'],
+            repo['stargazers_count'],
+            open_issues
+        ))
+    return repos_for_output
+
+
 if __name__ == '__main__':
     args = get_cmdline_args()
     api_auth = None
     if args.user:
         password = getpass.getpass('GitHub password:')
         api_auth = requests.auth.HTTPBasicAuth(args.user, password)
-    week_ago = datetime.date.today() - datetime.timedelta(days=args.days)
-    repos_for_output = []
     print('Please wait')
     try:
-        trending_repos = get_trending_repositories(week_ago, args.top, api_auth)
-        for repo in trending_repos['items']:
-            open_issues = get_open_issues_amount(
-                repo['owner']['login'],
-                repo['name'],
-                api_auth
-            )
-            repos_for_output.append((
-                repo['html_url'],
-                repo['stargazers_count'],
-                open_issues
-            ))
+        repos_for_output = get_repos_for_output(
+            datetime.date.today() - datetime.timedelta(days=args.days),
+            args.top,
+            api_auth
+        )
     except APIRateLimitException:
         print('API rate limit exceeded')
     except APIBadCredentialsException:
