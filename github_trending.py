@@ -100,6 +100,7 @@ if __name__ == '__main__':
         password = getpass.getpass('GitHub password:')
         api_auth = requests.auth.HTTPBasicAuth(args.user, password)
     print('Please wait')
+    repos_for_output = []
     try:
         repos_for_output = get_repos_for_output(
             datetime.date.today() - datetime.timedelta(days=args.days),
