@@ -106,9 +106,7 @@ if __name__ == '__main__':
             args.top,
             api_auth
         )
-    except APIRateLimitException:
-        print('API rate limit exceeded')
-    except APIBadCredentialsException:
-        exit('API bad credentials')
+    except (APIRateLimitException, APIBadCredentialsException):
+        print('API rate limit exceeded or API bad credentials')
     if repos_for_output:
         print_top_repos(repos_for_output)
